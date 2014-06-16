@@ -15,20 +15,21 @@ typedef struct
 const key_t key = 75; //建立键为75的消息队列
 void server()
 {
-	int shmflag = IPC_CREAT | 0600;
-        int shmid = shmget(key, max_size, shmflag);
+	int shmflag = IPC_CREAT | 0600;			//设置共享存储区模式
+        int shmid = shmget(key, max_size, shmflag);	//建立共享存储区
 	if(shmid == -1)
-		puts("创建共享存储消息队列失败");
+		puts("创建共享存储消息队列失败");	
+	//将共享存储区与进程的内存虚拟地址空间进行映射，返回的是进程虚拟内存空间的首地址
 	char* virtaddr = shmat(shmid, 0, 0);
 	if(virtaddr == (void *)(-1))
 		puts("映射失败");
 	do
 	{
-		virtaddr[0] = (char)(-1);
-		while(virtaddr[0] == (char)(-1)) {}
+		virtaddr[0] = (char)(-1);	//将共享区第一个字节设置为-1，表示 此时server端是空闲的
+		while(virtaddr[0] == (char)(-1)) {}		//轮询检测，等待客户端发来消息
 		puts("server recive data");
-	}while(virtaddr[0]!=0);
-	int shmend = shmdt(virtaddr);
+	}while(virtaddr[0]!=0); 			//如果是0，那么应该退出
+	int shmend = shmdt(virtaddr);			//server进程结束，切断与共享内存区的连接
 	if(shmend == -1) puts("server切断映射失败");
 	else puts("server切断映射成功");
 }
